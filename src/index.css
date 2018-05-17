@@ -1,5 +1,6 @@
-body {
-  margin: 0;
+/* Make sure the containers fill 100% of the viewport */
+html, body, #root {
   padding: 0;
-  font-family: sans-serif;
+  margin: 0;
+  height: 100%;
 }

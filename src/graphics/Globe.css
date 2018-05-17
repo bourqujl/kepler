@@ -1,0 +1,5 @@
+.Globe {
+    overflow: hidden;
+    width: 100%;
+    flex: 1;
+}
