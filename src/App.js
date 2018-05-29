@@ -7,16 +7,14 @@ import "./App.css"
 
 // React components
 import React, { Component } from 'react'
-import Globe from './graphics/Globe'
-
-
+import SatView from './components/SatView'
 
 // Main application
 class App extends Component {
   render() {
     return (
       <div className="App">
-        <Globe />
+        <SatView />
       </div>
     );
   }
