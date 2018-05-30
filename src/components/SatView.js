@@ -3,8 +3,11 @@ import React, { Component } from 'react'
 import debounce from 'debounce'
 import * as THREE from 'three'
 import OrbitControls from 'three-orbitcontrols'
-import { globeGridSectionGeometry } from '../graphics/geometry'
-import globeTexture from '../textures/globe_no_clouds_4k.jpg'
+import { WGS84Spheroid, WGS84GridSection } from '../graphics/geometry'
+
+import naturalEarthA1 from '../textures/natural_earth_A1.jpg'
+import naturalEarthB1 from '../textures/natural_earth_B1.jpg'
+import naturalEarthC1 from '../textures/natural_earth_C1.jpg'
 
 
 export default class SatView extends Component {
@@ -57,14 +60,15 @@ export default class SatView extends Component {
     //texture.flipY = false
     //texture.wrapS = THREE.RepeatWrapping;
     //texture.repeat.x = - 1;
-    let a1 = new THREE.ParametricGeometry(globeGridSectionGeometry('A1'), 8, 8)
-    let b1 = new THREE.ParametricGeometry(globeGridSectionGeometry('B1'), 8, 8)
-    let c1 = new THREE.ParametricGeometry(globeGridSectionGeometry('C1'), 8, 8)
-    let material = new THREE.MeshBasicMaterial({wireframe: true})
+    
+    let globe_geometry = new THREE.ParametricGeometry(WGS84GridSection(180, 360, 0, 180), 8, 8)
+    let globe_material = new THREE.MeshBasicMaterial({wireframe: true})
+    let globe = new THREE.Mesh(globe_geometry, globe_material)
+    let normals = new THREE.FaceNormalsHelper(globe)
+    
 
-    this.scene.add(new THREE.Mesh(a1, material))
-    this.scene.add(new THREE.Mesh(b1, material))
-    this.scene.add(new THREE.Mesh(c1, material))
+    this.scene.add(globe)
+    this.scene.add(normals)
 
     //console.log(object)
   }
