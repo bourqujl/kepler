@@ -1,0 +1,40 @@
+.ground-track {
+    overflow: hidden;
+    width: 100%;
+    flex: 1;
+}
+
+.ground-track svg {
+    background-color: #333;
+}
+
+text.clock {
+    text-anchor: middle;
+    fill: #ccc;
+}
+
+path.land {
+    stroke: none;
+    fill: #555;
+}
+
+path.countries {
+    fill: none;
+    stroke: #ccc;
+}
+
+path.grid {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 0.5;
+    display: none;
+}
+
+path.border {
+    fill: none;
+    stroke: #ccc;
+}
+
+path.solar-terminator {
+    fill: rgba(0,0,0,0.4);
+}

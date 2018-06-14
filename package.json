@@ -4,14 +4,19 @@
   "private": true,
   "dependencies": {
     "@blueprintjs/core": "^2.3.1",
+    "d3": "^5.4.0",
+    "d3-geo": "^1.10.0",
+    "d3-geo-projection": "^2.4.0",
+    "d3-time": "^1.0.8",
+    "d3-time-format": "^2.1.1",
     "debounce": "^1.1.0",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",
     "react-router": "^4.2.0",
     "react-scripts": "1.1.4",
     "react-transition-group": "^2.3.1",
-    "three": "^0.92.0",
-    "three-orbitcontrols": "^2.1.2"
+    "satellite.js": "^2.0.2",
+    "topojson": "^3.0.2"
   },
   "scripts": {
     "start": "react-scripts start",
