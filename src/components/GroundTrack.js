@@ -12,6 +12,8 @@ import "./GroundTrack.css"
 import world from "../resources/world-110m.json"
 
 const clockFormat = d3.utcFormat("%Y-%m-%d %H:%M:%S UTC")
+let color = d3.scaleOrdinal()
+  .range(["#9e0142","#d53e4f","#f46d43","#fdae61","#fee08b","#ffffbf","#e6f598","#abdda4","#66c2a5","#3288bd","#5e4fa2"]);
 
 export default class GroundTrack extends Component {
   
@@ -49,6 +51,7 @@ export default class GroundTrack extends Component {
     this.drawWorldMap()
     this.drawSolarTerminator()
     this.drawClock()
+    this.drawGroundTracks()
     this.drawSatellites()
   }
 
@@ -106,21 +109,33 @@ export default class GroundTrack extends Component {
       .attr('class', 'marker')
       .style('fill', '#ccc')
     const circle = g.append('circle')
-      .attr('r', 4)
+      .attr('r', 5)
+      .style('fill', color(sat.id))
     const text = g.append('text')
       .text(sat.name)
       .attr('dominant-baseline', 'central')
+      .style('fill', color(sat.id))
     return {g: g, circle: circle, text: text}
   }
 
   drawSatellites() {
     for (const key of Object.keys(this.satellites)) {
       const sat = this.satellites[key]
-      sat.propagate(this.props.datetime)
-      const [x, y] = this.projection(sat.position)
+      const satState = sat.stateVectors(this.props.datetime)
+      const [x, y] = this.projection([satState.longitude, satState.latitude])
       sat.marker = sat.marker || this.createSatelliteMarker(sat)
       sat.marker.circle.attr('cx', x).attr('cy', y)
       sat.marker.text.attr('x', x+10).attr('y', y)
+    }
+  }
+
+  drawGroundTracks() {
+    for (const key of Object.keys(this.satellites)) {
+      const sat = this.satellites[key]
+      const gt = sat.groundTrackFeature(this.props.datetime)
+      const p = this.svg.select('g.ground-tracks').append('path')
+      p.attr('d', this.path(gt))
+      p.style('stroke', color(sat.id))
     }
   }
 
@@ -139,6 +154,7 @@ export default class GroundTrack extends Component {
           <path className="countries"/>
           <path className="grid"/>
           <path className="solar-terminator"/>
+          <g className="ground-tracks"/>
           <g className="satellites"/>
           <path className="border"/>
           <text className="clock"/>

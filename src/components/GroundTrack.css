@@ -38,3 +38,9 @@ path.border {
 path.solar-terminator {
     fill: rgba(0,0,0,0.4);
 }
+
+.ground-tracks path {
+    stroke: #ccc;
+    stroke-width: 2;
+    fill: none;
+}
