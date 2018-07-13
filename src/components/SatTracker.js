@@ -8,17 +8,19 @@ import {solarTerminatorPosition} from '../utils/solar'
 import {Satellite} from '../utils/satellite'
 
 // Resources
-import "./GroundTrack.css"
+import "./SatTracker.css"
 import world from "../resources/world-110m.json"
 
 const clockFormat = d3.utcFormat("%Y-%m-%d %H:%M:%S UTC")
 let color = d3.scaleOrdinal()
   .range(["#9e0142","#d53e4f","#f46d43","#fdae61","#fee08b","#ffffbf","#e6f598","#abdda4","#66c2a5","#3288bd","#5e4fa2"]);
 
-export default class GroundTrack extends Component {
+export default class SatTracker extends Component {
   
   constructor(props) {
     super(props)
+    
+    // Bind this
     this.resizeScene = this.resizeScene.bind(this)
   }
 
@@ -50,7 +52,6 @@ export default class GroundTrack extends Component {
     this.updateProjection()
     this.drawWorldMap()
     this.drawSolarTerminator()
-    this.drawClock()
     this.drawGroundTracks()
     this.drawSatellites()
   }
@@ -61,7 +62,7 @@ export default class GroundTrack extends Component {
 
   shouldComponentUpdate(nextProps, nextState) {
     this.drawSolarTerminator()
-    this.drawClock()
+    this.drawGroundTracks()
     this.drawSatellites()
     return false
   }
@@ -73,14 +74,14 @@ export default class GroundTrack extends Component {
     this.updateProjection()
     this.drawWorldMap()
     this.drawSolarTerminator()
+    this.drawGroundTracks()
     this.drawSatellites()
-    this.drawClock()
   }
 
   updateProjection() {
     const width = this.element.clientWidth
     const height = this.element.clientHeight
-    this.projection = geoEquirectangular().fitExtent([[20, 30],[width-20, height-20]], this.features.border)
+    this.projection = geoEquirectangular().fitExtent([[this.props.padding, this.props.padding],[width-this.props.padding, height-this.props.padding]], this.features.border)
     this.path = geoPath().projection(this.projection)
     this.svg.attr('width', width)
     this.svg.attr('height', height)
@@ -129,26 +130,34 @@ export default class GroundTrack extends Component {
     }
   }
 
+  createSatelliteGroundTrack(sat) {
+    const track = sat.generateGroundTrack(this.props.datetime)
+    const path = this.svg.select('g.ground-tracks').append('path')
+    path.style('stroke', color(sat.id))
+    return {path: path, track: track}
+  }
+
+  checkGroundTrackBounds(sat) {
+    return sat.groundTrack.track.properties.startTime > this.props.datetime 
+      || sat.groundTrack.track.properties.endTime < this.props.datetime
+  }
+
   drawGroundTracks() {
     for (const key of Object.keys(this.satellites)) {
       const sat = this.satellites[key]
-      const gt = sat.groundTrackFeature(this.props.datetime)
-      const p = this.svg.select('g.ground-tracks').append('path')
-      p.attr('d', this.path(gt))
-      p.style('stroke', color(sat.id))
+      sat.groundTrack = sat.groundTrack || this.createSatelliteGroundTrack(sat)
+      
+      if (this.checkGroundTrackBounds(sat)) {
+        sat.groundTrack.track = sat.generateGroundTrack(this.props.datetime)
+      }
+      
+      sat.groundTrack.path.attr('d', this.path(sat.groundTrack.track))
     }
-  }
-
-  drawClock() {
-    this.clock = this.clock || this.svg.select('text.clock')
-    this.clock.attr('x', this.svg.attr('width')/2)
-    this.clock.attr('y', 20)
-    this.clock.text(clockFormat(this.props.datetime))
   }
 
   render() {
     return (
-      <div className="ground-track" ref={(element) => {this.element = element}}>
+      <div className="sat-tracker" ref={(element) => {this.element = element}}>
         <svg xmlns="http://www.w3.org/2000/svg">
           <path className="land"/>
           <path className="countries"/>
@@ -162,4 +171,8 @@ export default class GroundTrack extends Component {
       </div>
     )
   }
+}
+
+SatTracker.defaultProps = {
+  padding: 20
 }

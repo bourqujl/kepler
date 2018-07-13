@@ -3,8 +3,60 @@
 import * as satellite from 'satellite.js'
 import {DateTime} from 'luxon'
 
-let degrees = 180 / Math.PI;
-let rootFinder = require('newton-raphson-method')
+let degrees = 180 / Math.PI
+
+// Python modulo function
+function mod(m, n) {
+    return m - (Math.floor(m/n) * n);
+}
+
+// Check if we crossed the 180th parallel
+// going from l0 and l1
+function antiMeridian(l0, l1) {
+    let l0_mod = mod(l0, 360)
+    let l1_mod = mod(l1, 360)
+    if (Math.abs(l1_mod - l0_mod) >= 180) {
+        return false
+    } else {
+        return Math.abs(180-l0_mod) + Math.abs(180-l1_mod) === Math.abs(l1_mod - l0_mod)
+    }
+}
+
+// Use the secant method to find the root
+function findRoot(stateVectors, t1, t0, maxIter=10) {
+    
+    function f(x) {
+        let d = DateTime.fromMillis(x).toJSDate()
+        let sv = stateVectors(d)
+        return mod(sv.longitude, 360) - 180
+    }
+
+    f = f.bind(this)
+
+    let x0 = t0.toMillis()
+    let x1 = t1.toMillis()
+    let x2 = 0
+    let i = 0
+
+    while (i < maxIter) {
+        x2 = (x0*f(x1)-x1*f(x0))/(f(x1) - f(x0))
+        
+        if (!isFinite(x2)) {
+            x2 = x1
+            break
+        } else if (Math.abs(x2-x1) < 1) {
+            break
+        }
+        
+        x0 = x1
+        x1 = x2
+        i++
+    }
+
+    return DateTime.fromMillis(x2)
+}
+
+// <--------------------------------------------------------------------------->
 
 export class Satellite {
     constructor(name, tle) {
@@ -28,7 +80,7 @@ export class Satellite {
         }
     }
 
-    groundTrackFeature(time) {
+    generateGroundTrack(time, timeDelta=15) {
         let track = {
             type: 'Feature',
             geometry: {
@@ -37,78 +89,50 @@ export class Satellite {
             },
             properties: {}
         }
-
+        
+        // Calcuate where the satellite has been
         let t0 = DateTime.fromJSDate(time)
         let sv0 = this.stateVectors(t0.toJSDate())
         
         while (true) {
-            track.geometry.coordinates.push([sv0.longitude, sv0.latitude])
-
-            if (sv0.longitude === 180 || sv0.longitude === -180) {
-                break
-            }
-
-            let t1 = t0.plus({seconds: 10})
+            track.geometry.coordinates.unshift([sv0.longitude, sv0.latitude])
+            let t1 = t0.minus({seconds: timeDelta})
             let sv1 = this.stateVectors(t1.toJSDate())
             
-            if (sv1.longitude === 180 || sv1.longitude === -180) {
-                track.geometry.coordinates.push([sv1.longitude, sv1.latitude])
+            if (antiMeridian(sv0.longitude, sv1.longitude)) {
+                let startTime = findRoot(this.stateVectors.bind(this), t1, t0)
+                let startState = this.stateVectors(startTime.toJSDate())
+                track.geometry.coordinates.unshift([startState.longitude, startState.latitude])
+                track.properties['startTime'] = startTime.toJSDate()
                 break
             }
 
-            let sv0_sign = Math.sign(sv0.longitude)
-            let sv1_sign = Math.sign(sv1.longitude)
-
-            if (sv1_sign !== sv0_sign && Math.abs(sv0.longitude) > 90) {
-                const y0 = sv0.latitude + 90
-                const y1 = sv1.latitude + 90
-                const x0 = sv0.longitude + 180
-                const x1 = sv1.longitude + 180
-                const lat = y0 + (180-x0)*(y1-y0)/(x1-x0)
-                track.geometry.coordinates.push([180, lat-90])
-                break
-            }
-            
             t0 = t1
             sv0 = sv1
         }
 
+        // Calculate where the satellite is going
         t0 = DateTime.fromJSDate(time)
         sv0 = this.stateVectors(t0.toJSDate())
         
         while (true) {
-            track.geometry.coordinates.unshift([sv0.longitude, sv0.latitude])
-
-            if (sv0.longitude === 180 || sv0.longitude === -180) {
-                break
-            }
-
-            let t1 = t0.minus({seconds: 10})
+            track.geometry.coordinates.push([sv0.longitude, sv0.latitude])
+            let t1 = t0.plus({seconds: timeDelta})
             let sv1 = this.stateVectors(t1.toJSDate())
             
-            if (sv1.longitude === 180 || sv1.longitude === -180) {
-                track.geometry.coordinates.unshift([sv1.longitude, sv1.latitude])
+            if (antiMeridian(sv0.longitude, sv1.longitude)) {
+                let endTime = findRoot(this.stateVectors.bind(this), t1, t0)
+                let endState = this.stateVectors(endTime.toJSDate())
+                track.geometry.coordinates.push([endState.longitude, endState.latitude])
+                track.properties['endTime'] = endTime.toJSDate()
                 break
             }
 
-            let sv0_sign = Math.sign(sv0.longitude)
-            let sv1_sign = Math.sign(sv1.longitude)
-
-            if (sv1_sign !== sv0_sign && Math.abs(sv0.longitude) > 90) {
-                const y0 = sv0.latitude + 90
-                const y1 = sv1.latitude + 90
-                const x0 = sv0.longitude + 180
-                const x1 = sv1.longitude + 180
-                const lat = y0 + (180-x0)*(y1-y0)/(x1-x0)
-                track.geometry.coordinates.unshift([180, lat-90])
-                break
-            }
-            
             t0 = t1
             sv0 = sv1
         }
-        
+
         return track
     }
-
 }
+

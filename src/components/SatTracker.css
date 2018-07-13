@@ -1,16 +1,11 @@
-.ground-track {
+.sat-tracker {
     overflow: hidden;
     width: 100%;
     flex: 1;
 }
 
-.ground-track svg {
+.sat-tracker svg {
     background-color: #333;
-}
-
-text.clock {
-    text-anchor: middle;
-    fill: #ccc;
 }
 
 path.land {

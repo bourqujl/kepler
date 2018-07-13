@@ -7,7 +7,7 @@ import "./App.css"
 
 // React components
 import React, { Component } from 'react'
-import GroundTrack from './components/GroundTrack'
+import SatTracker from './components/SatTracker'
 
 const satellites = [
     {
@@ -76,7 +76,7 @@ class App extends Component {
   render() {
     return (
       <div className="app">
-        <GroundTrack datetime={this.state.datetime} satellites={satellites}/>
+        <SatTracker datetime={this.state.datetime} satellites={satellites}/>
       </div>
     );
   }
